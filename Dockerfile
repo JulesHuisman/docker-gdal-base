@@ -8,7 +8,8 @@ FROM python:3.8-slim-buster as builder
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends \
     cmake build-essential wget ca-certificates unzip pkg-config \
-    zlib1g-dev libfreexl-dev libxml2-dev nasm libpng-dev
+    zlib1g-dev libfreexl-dev libxml2-dev nasm libpng-dev autoconf \ 
+    libtool
 
 WORKDIR /tmp
 
@@ -37,6 +38,16 @@ RUN wget -q https://github.com/ebiggers/libdeflate/archive/v${LIBDEFLATE_VERSION
     && echo "building libdeflate ${LIBDEFLATE_VERSION}..." \
     && make -j${CPUS} \
     && make --quiet install
+
+ENV EXPAT_VER=2.2.0
+RUN wget -q -O expat-${EXPAT_VER}.tar.gz wget https://github.com/libexpat/libexpat/archive/R_2_2_0.tar.gz \
+    && tar xvfz expat-${EXPAT_VER}.tar.gz \
+    && mv libexpat-R_2_2_0 expat-${EXPAT_VER} \
+    && cd expat-${EXPAT_VER}/expat \
+    && sh buildconf.sh \
+    && ./configure --prefix=/usr/local \
+    && echo "building expat ${EXPAT_VER}..." \
+    && make --quiet -j${CPUS} && make --quiet install
 
 ENV LIBJPEG_TURBO_VERSION 2.0.5
 RUN wget -q https://github.com/libjpeg-turbo/libjpeg-turbo/archive/${LIBJPEG_TURBO_VERSION}.tar.gz \
@@ -102,13 +113,13 @@ RUN wget -q https://github.com/OSGeo/libgeotiff/releases/download/${LIBGEOTIFF_V
     && echo "building libgeotiff ${LIBGEOTIFF_VERSION}..." \
     && make --quiet -j${CPUS} && make --quiet install
 
-# ENV SPATIALITE_VERSION 5.0.0
-# RUN wget -q https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
-# RUN apt-get install -y libminizip-dev
-# RUN tar -xzvf libspatialite-${SPATIALITE_VERSION}.tar.gz && cd libspatialite-${SPATIALITE_VERSION} \
-#     && ./configure --prefix=/usr/local \
-#     && echo "building SPATIALITE ${SPATIALITE_VERSION}..." \
-#     && make --quiet -j${CPUS} && make --quiet install
+ENV SPATIALITE_VERSION 5.0.0
+RUN wget -q https://www.gaia-gis.it/gaia-sins/libspatialite-${SPATIALITE_VERSION}.tar.gz
+RUN apt-get install -y libminizip-dev
+RUN tar -xzvf libspatialite-${SPATIALITE_VERSION}.tar.gz && cd libspatialite-${SPATIALITE_VERSION} \
+    && ./configure --prefix=/usr/local \
+    && echo "building SPATIALITE ${SPATIALITE_VERSION}..." \
+    && make --quiet -j${CPUS} && make --quiet install
 
 ENV OPENJPEG_VERSION 2.3.1
 RUN wget -q -O openjpeg-${OPENJPEG_VERSION}.tar.gz https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}.tar.gz \
@@ -129,10 +140,7 @@ RUN tar -xzf gdal-${GDAL_VERSION}.tar.gz && cd gdal-${GDAL_SHORT_VERSION} && \
     --disable-static \
     --with-curl=/usr/local/bin/curl-config \
     --with-geos \
-    --with-geotiff=/usr/local \
     --with-hide-internal-symbols=yes \
-    --with-libtiff=/usr/local \
-    --with-jpeg=/usr/local \
     --with-png \
     --with-openjpeg \
     --with-sqlite3 \
@@ -143,6 +151,10 @@ RUN tar -xzf gdal-${GDAL_VERSION}.tar.gz && cd gdal-${GDAL_SHORT_VERSION} && \
     --with-webp=/usr/local \
     --with-zstd=/usr/local \
     --with-libdeflate \
+    --with-geotiff=/usr/local \
+    --with-libtiff=/usr/local \
+    --with-jpeg=/usr/local \
+    --with-expat=/usr/local \
     && echo "building GDAL ${GDAL_VERSION}..." \
     && make -j${CPUS} && make --quiet install
 
