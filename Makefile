@@ -5,8 +5,8 @@ TAG ?= latest
 all: build
 
 build:
-	docker build --tag perrygeo/gdal-base:$(TAG) --file Dockerfile .
-	docker tag perrygeo/gdal-base:$(TAG) perrygeo/gdal-base:latest
+	docker build --tag quantiledevelopment/gdal:$(TAG) --file new.Dockerfile .
+	docker tag quantiledevelopment/gdal:$(TAG) quantiledevelopment/gdal:latest
 
 test:
 	# TODO fix https://api.travis-ci.com/v3/job/166029093/log.txt
